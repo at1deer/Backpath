@@ -19,11 +19,22 @@ The first build should be a black-box command-line tool. A user supplies JSON st
 ## Limitations
 
 - Corpus mode only.
-- Exact equivalence only.
-- No shrinking yet.
+- Exact and structural equivalence are implemented.
+- Local shrinking is implemented for `domain-exclusion`, `return-failure`, and `distinction-collision`.
 - No generation yet.
+- No canonical or predicate equivalence yet.
+- No retained memory support yet.
 - No sandbox security claim.
 - Loss localization currently supports linear distinction-collision localization only.
+
+## Current Prototype Features
+
+- JSON manifests and JSON witnesses.
+- Ajv validation for manifests and declared source/target schemas.
+- `argv`-array command execution with command evidence and replay.
+- Corpus-mode checks for `domain-exclusion`, `distinction-collision`, `return-failure`, `compare-paths`, and `locate-loss`.
+- Exact and built-in structural equivalence contracts.
+- Local witness shrinking for `domain-exclusion`, `return-failure`, and `distinction-collision`.
 
 ## Pack contents
 
@@ -46,18 +57,11 @@ The first build should be a black-box command-line tool. A user supplies JSON st
 - `docs/13_codex_build_prompt.md` — implementation prompt for a coding agent.
 - `examples/` — starter manifests, toy transforms, corpus items, and sample witness.
 
-## First prototype recommendation
+## Not Implemented Yet
 
-Do not begin with JSON Schema generation. Begin with **corpus mode**:
-
-1. Read a manifest.
-2. Load JSON files from `source.corpus`.
-3. Run black-box transforms through `argv`.
-4. Implement exact equivalence.
-5. Emit witnesses for:
-   - `domain-exclusion`
-   - `distinction-collision`
-   - `return-failure`
-6. Add shrinking only after the first witnesses replay.
-
-This gets Backpath usable on day one without waiting for schema-aware generators.
+- Search generation and corpus mutation.
+- Canonicalizer commands and predicate equivalence.
+- Retained memory contracts.
+- YAML manifests.
+- Dashboards, plugins, scoring, and sandbox security.
+- Return localization, path-divergence localization, and path/loss shrinking.

@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "operation": "compare-paths",
+  "name": "Generated timestamps diverge exactly",
+  "source": {
+    "schema": "../schemas/generated-source.schema.json",
+    "corpus": [
+      "../corpus/generated_base.json"
+    ],
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/generated_at_a.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "target": {
+    "schema": "../schemas/generated-target.schema.json",
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "paths": [
+    {
+      "name": "route-a",
+      "edges": [
+        {
+          "name": "stamp-a",
+          "transform": {
+            "argv": [
+              "node",
+              "../transforms/generated_at_a.js"
+            ],
+            "timeoutMs": 2000
+          },
+          "target": {
+            "schema": "../schemas/generated-target.schema.json",
+            "equivalence": {
+              "mode": "exact"
+            }
+          }
+        }
+      ],
+      "target": {
+        "schema": "../schemas/generated-target.schema.json",
+        "equivalence": {
+          "mode": "exact"
+        }
+      }
+    },
+    {
+      "name": "route-b",
+      "edges": [
+        {
+          "name": "stamp-b",
+          "transform": {
+            "argv": [
+              "node",
+              "../transforms/generated_at_b.js"
+            ],
+            "timeoutMs": 2000
+          },
+          "target": {
+            "schema": "../schemas/generated-target.schema.json",
+            "equivalence": {
+              "mode": "exact"
+            }
+          }
+        }
+      ],
+      "target": {
+        "schema": "../schemas/generated-target.schema.json",
+        "equivalence": {
+          "mode": "exact"
+        }
+      }
+    }
+  ],
+  "search": {
+    "mode": "corpus",
+    "budget": 100
+  },
+  "replay": {
+    "forward": 1,
+    "equivalence": 1
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "operation": "distinction-collision",
+  "name": "Username targets are equivalent under lowercase normalization",
+  "source": {
+    "schema": "../schemas/username-source.schema.json",
+    "corpus": [
+      "../corpus/username_mixed_case.json",
+      "../corpus/username_lower_case.json"
+    ],
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/username_identity.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "target": {
+    "schema": "../schemas/username-target.schema.json",
+    "equivalence": {
+      "mode": "structural",
+      "normalizers": {
+        "/username": "lowercase"
+      }
+    }
+  },
+  "search": {
+    "mode": "corpus",
+    "budget": 100
+  },
+  "replay": {
+    "forward": 1,
+    "equivalence": 1
+  }
+}

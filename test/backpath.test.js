@@ -24,7 +24,14 @@ test("validate accepts example manifests", () => {
     "examples/manifests/locate-loss.account-type.json",
     "examples/manifests/distinction-collision.noisy-approval.json",
     "examples/manifests/return-failure.noisy-approval.json",
-    "examples/manifests/domain-exclusion.noisy-status.json"
+    "examples/manifests/domain-exclusion.noisy-status.json",
+    "examples/manifests/distinction-collision.username-exact.json",
+    "examples/manifests/distinction-collision.username-structural-source.json",
+    "examples/manifests/distinction-collision.username-target-structural.json",
+    "examples/manifests/distinction-collision.tags-exact.json",
+    "examples/manifests/distinction-collision.tags-structural-source.json",
+    "examples/manifests/compare-paths.generated-at-exact.json",
+    "examples/manifests/compare-paths.generated-at-structural-target.json"
   ]) {
     const result = runJson(["validate", manifest]);
     assert.equal(result.json.valid, true, manifest);
@@ -60,6 +67,88 @@ test("locate-loss account type example emits loss_localized", () => {
   assert.equal(witness.status, "witnessed");
 });
 
+test("exact equivalence behavior remains unchanged for structural examples", () => {
+  const username = runJson(["check", "examples/manifests/distinction-collision.username-exact.json"]).json;
+  const generated = runJson(["check", "examples/manifests/compare-paths.generated-at-exact.json"]).json;
+
+  assert.equal(username.classification, "distinction_collision");
+  assert.equal(username.source.equivalence, "exact");
+  assert.equal(generated.classification, "path_divergence");
+  assert.deepEqual(generated.target.differencePaths, ["/generatedAt"]);
+});
+
+test("structural lowercase normalizer prevents false collision", () => {
+  const witness = runJson(["check", "examples/manifests/distinction-collision.username-structural-source.json"]).json;
+
+  assert.equal(witness.operation, "distinction_collision");
+  assert.equal(witness.status, "not_found_within_budget");
+  assert.equal(witness.classification, "none");
+  assert.equal(witness.source.equivalence, "structural");
+});
+
+test("structural unorderedPaths treats arrays as equivalent", () => {
+  const exact = runJson(["check", "examples/manifests/distinction-collision.tags-exact.json"]).json;
+  const structural = runJson(["check", "examples/manifests/distinction-collision.tags-structural-source.json"]).json;
+
+  assert.equal(exact.classification, "distinction_collision");
+  assert.deepEqual(exact.source.differencePaths, ["/tags/0", "/tags/1"]);
+  assert.equal(structural.status, "not_found_within_budget");
+  assert.equal(structural.classification, "none");
+  assert.equal(structural.source.equivalence, "structural");
+});
+
+test("structural ignorePaths prevents false path_divergence", () => {
+  const witness = runJson(["check", "examples/manifests/compare-paths.generated-at-structural-target.json"]).json;
+
+  assert.equal(witness.operation, "path_divergence");
+  assert.equal(witness.status, "not_found_within_budget");
+  assert.equal(witness.classification, "none");
+  assert.equal(witness.target.equivalence, "structural");
+});
+
+test("return_drift respects structural source equivalence", () => {
+  const fixture = createStructuralReturnFixture({
+    sourceEquivalence: {
+      mode: "structural",
+      normalizers: {
+        "/username": "lowercase"
+      }
+    }
+  });
+
+  const witness = runJson(["check", fixture.manifest]).json;
+  assert.equal(witness.operation, "return_failure");
+  assert.equal(witness.status, "not_found_within_budget");
+  assert.equal(witness.classification, "none");
+  assert.equal(witness.source.equivalence, "structural");
+});
+
+test("memory.mode declared validates but check rejects unsupported retained memory", () => {
+  const fixture = createFixture({
+    operation: "return-failure",
+    memory: {
+      mode: "declared"
+    }
+  });
+
+  const validation = runJson(["validate", fixture.manifest]);
+  assert.equal(validation.json.valid, true);
+
+  const rejected = runJson(["check", fixture.manifest], { allowExit: 2 });
+  assert.equal(rejected.json.valid, false);
+  assert.ok(rejected.json.errors.includes("v0.6 check does not yet support memory.mode='declared'"));
+});
+
+test("replay respects structural equivalence", () => {
+  const witness = runJson(["check", "examples/manifests/distinction-collision.username-target-structural.json"]).json;
+
+  assert.equal(witness.classification, "distinction_collision");
+  assert.equal(witness.target.equivalence, "structural");
+  assert.match(witness.summary, /declared target equivalence/);
+  assert.equal(witness.summary.includes("exact-equivalent"), false);
+  assertReplay(witness, "distinction_collision");
+});
+
 test("emitted witnesses validate against witness schema", () => {
   const witnesses = [
     runJson(["check", "examples/manifests/distinction-collision.approval.json"]).json,
@@ -92,6 +181,7 @@ test("shrink.enabled=false preserves not_attempted minimality", () => {
   const witness = runJson(["check", fixture.manifest]).json;
   assert.equal(witness.classification, "source_rejected");
   assert.equal(witness.minimality.kind, "not_attempted");
+  assertWitnessSchema(witness);
 });
 
 test("noisy distinction-collision shrinks to fewer difference paths", () => {
@@ -152,8 +242,10 @@ test("shrink budget is respected", () => {
   const witness = runJson(["check", fixture.manifest]).json;
   const diagnostic = shrinkDiagnostic(witness);
   assert.equal(witness.classification, "source_rejected");
+  assert.equal(witness.minimality.kind, "budget_exhausted");
   assert.equal(diagnostic.shrinkAttempts, 1);
   assert.equal(diagnostic.shrinkBudgetExhausted, true);
+  assertWitnessSchema(witness);
 });
 
 test("terminal mismatch includes both path terminals", () => {
@@ -403,7 +495,7 @@ test("replay can rerun an emitted witness", () => {
   assert.equal(replay.classification, "distinction_collision");
 });
 
-function createFixture({ operation, forwardCode, reverseCode, shrink }) {
+function createFixture({ operation, forwardCode, reverseCode, shrink, memory }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "backpath-contract-"));
   writeJson(path.join(dir, "source.schema.json"), {
     type: "object",
@@ -470,9 +562,82 @@ function createFixture({ operation, forwardCode, reverseCode, shrink }) {
       reverseIsolation: "fresh-process-clean-tempdir"
     };
   }
+  if (memory) {
+    manifest.memory = memory;
+  }
   if (shrink) {
     manifest.shrink = shrink;
   }
+
+  const manifestPath = path.join(dir, "manifest.json");
+  writeJson(manifestPath, manifest);
+  return { dir, manifest: manifestPath };
+}
+
+function createStructuralReturnFixture({ sourceEquivalence }) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "backpath-structural-return-"));
+  writeJson(path.join(dir, "source.schema.json"), {
+    type: "object",
+    additionalProperties: false,
+    required: ["username"],
+    properties: {
+      username: { type: "string" }
+    }
+  });
+  writeJson(path.join(dir, "target.schema.json"), {
+    type: "object",
+    additionalProperties: false,
+    required: ["username"],
+    properties: {
+      username: { type: "string" }
+    }
+  });
+  writeJson(path.join(dir, "source.json"), { username: "Aidan" });
+  fs.writeFileSync(
+    path.join(dir, "forward.js"),
+    [
+      "const input = JSON.parse(require('node:fs').readFileSync(0, 'utf8'));",
+      "process.stdout.write(JSON.stringify({ username: input.username }) + '\\n');"
+    ].join(" ")
+  );
+  fs.writeFileSync(
+    path.join(dir, "reverse.js"),
+    "process.stdout.write(JSON.stringify({ username: 'aidan' }) + '\\n');"
+  );
+
+  const manifest = {
+    version: 1,
+    operation: "return-failure",
+    source: {
+      schema: "source.schema.json",
+      corpus: ["source.json"],
+      equivalence: sourceEquivalence
+    },
+    forward: {
+      argv: [process.execPath, "forward.js"],
+      timeoutMs: 2000
+    },
+    target: {
+      schema: "target.schema.json",
+      equivalence: { mode: "exact" }
+    },
+    reverse: {
+      argv: [process.execPath, "reverse.js"],
+      timeoutMs: 2000
+    },
+    context: {
+      reverseIsolation: "fresh-process-clean-tempdir"
+    },
+    search: {
+      mode: "corpus",
+      budget: 100
+    },
+    replay: {
+      forward: 1,
+      reverse: 1,
+      equivalence: 1
+    }
+  };
 
   const manifestPath = path.join(dir, "manifest.json");
   writeJson(manifestPath, manifest);

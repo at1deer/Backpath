@@ -118,7 +118,30 @@
     },
     "minimality": {
       "type": "object",
-      "additionalProperties": true
+      "additionalProperties": true,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "not_attempted",
+            "local_fixed_point",
+            "budget_exhausted",
+            "global_within_domain"
+          ]
+        },
+        "cost": {
+          "type": "array"
+        },
+        "budget": {
+          "type": "number"
+        },
+        "preservedClassification": {
+          "type": "boolean"
+        }
+      }
     },
     "reproducibility": {
       "type": "object",

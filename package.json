@@ -1,6 +1,6 @@
 {
   "name": "backpath",
-  "version": "0.5.0",
+  "version": "0.6.1",
   "description": "Minimal Backpath CLI prototype",
   "private": true,
   "bin": {

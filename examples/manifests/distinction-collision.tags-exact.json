@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "operation": "distinction-collision",
+  "name": "Tag order collapses under sort transform",
+  "source": {
+    "schema": "../schemas/tags-source.schema.json",
+    "corpus": [
+      "../corpus/tags_ethics_games.json",
+      "../corpus/tags_games_ethics.json"
+    ],
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/tags_sort.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "target": {
+    "schema": "../schemas/tags-target.schema.json",
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "search": {
+    "mode": "corpus",
+    "budget": 100
+  },
+  "replay": {
+    "forward": 1,
+    "equivalence": 1
+  }
+}

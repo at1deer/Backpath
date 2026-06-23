@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "operation": "distinction-collision",
+  "name": "Username case collapses under lowercase transform",
+  "source": {
+    "schema": "../schemas/username-source.schema.json",
+    "corpus": [
+      "../corpus/username_mixed_case.json",
+      "../corpus/username_lower_case.json"
+    ],
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/username_lower.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "target": {
+    "schema": "../schemas/username-target.schema.json",
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "search": {
+    "mode": "corpus",
+    "budget": 100
+  },
+  "replay": {
+    "forward": 1,
+    "equivalence": 1
+  }
+}

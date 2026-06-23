@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "operation": "compare-paths",
+  "name": "Generated timestamps are ignored for terminal comparison",
+  "source": {
+    "schema": "../schemas/generated-source.schema.json",
+    "corpus": [
+      "../corpus/generated_base.json"
+    ],
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/generated_at_a.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "target": {
+    "schema": "../schemas/generated-target.schema.json",
+    "equivalence": {
+      "mode": "structural",
+      "ignorePaths": [
+        "/generatedAt"
+      ]
+    }
+  },
+  "paths": [
+    {
+      "name": "route-a",
+      "edges": [
+        {
+          "name": "stamp-a",
+          "transform": {
+            "argv": [
+              "node",
+              "../transforms/generated_at_a.js"
+            ],
+            "timeoutMs": 2000
+          },
+          "target": {
+            "schema": "../schemas/generated-target.schema.json",
+            "equivalence": {
+              "mode": "structural",
+              "ignorePaths": [
+                "/generatedAt"
+              ]
+            }
+          }
+        }
+      ],
+      "target": {
+        "schema": "../schemas/generated-target.schema.json",
+        "equivalence": {
+          "mode": "structural",
+          "ignorePaths": [
+            "/generatedAt"
+          ]
+        }
+      }
+    },
+    {
+      "name": "route-b",
+      "edges": [
+        {
+          "name": "stamp-b",
+          "transform": {
+            "argv": [
+              "node",
+              "../transforms/generated_at_b.js"
+            ],
+            "timeoutMs": 2000
+          },
+          "target": {
+            "schema": "../schemas/generated-target.schema.json",
+            "equivalence": {
+              "mode": "structural",
+              "ignorePaths": [
+                "/generatedAt"
+              ]
+            }
+          }
+        }
+      ],
+      "target": {
+        "schema": "../schemas/generated-target.schema.json",
+        "equivalence": {
+          "mode": "structural",
+          "ignorePaths": [
+            "/generatedAt"
+          ]
+        }
+      }
+    }
+  ],
+  "search": {
+    "mode": "corpus",
+    "budget": 100
+  },
+  "replay": {
+    "forward": 1,
+    "equivalence": 1
+  }
+}
