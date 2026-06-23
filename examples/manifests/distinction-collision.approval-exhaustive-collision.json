@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "operation": "distinction-collision",
+  "name": "Finite approval domain with collision",
+  "source": {
+    "schema": "../schemas/approval-source.schema.json",
+    "enumerator": {
+      "argv": [
+        "node",
+        "../generators/enumerate_approval_collision.js"
+      ],
+      "timeoutMs": 2000
+    },
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/approval_up.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "target": {
+    "schema": "../schemas/approval-target.schema.json",
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "search": {
+    "mode": "exhaustive",
+    "budget": 10000,
+    "seed": 918273
+  },
+  "shrink": {
+    "enabled": true,
+    "budget": 5000,
+    "preserveClassification": true
+  },
+  "replay": {
+    "forward": 1,
+    "equivalence": 1
+  }
+}

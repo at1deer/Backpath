@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "operation": "domain-exclusion",
+  "name": "Mutation discovers unsupported pending review status",
+  "source": {
+    "schema": "../schemas/noisy-status-source.schema.json",
+    "corpus": [
+      "../corpus/status_noisy_active.json"
+    ],
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/status_up_reject_pending.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "target": {
+    "schema": "../schemas/status-target.schema.json",
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "search": {
+    "mode": "corpus-mutation",
+    "budget": 100,
+    "seed": 918273
+  },
+  "shrink": {
+    "enabled": true,
+    "budget": 5000,
+    "preserveClassification": true
+  },
+  "replay": {
+    "forward": 1
+  }
+}

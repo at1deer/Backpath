@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Approval Retained Memory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "approvalMode"
+  ],
+  "properties": {
+    "approvalMode": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "automatic",
+        "unknown"
+      ]
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "operation": "return-failure",
+  "name": "Approval envelope missing declared target",
+  "source": {
+    "schema": "../schemas/approval-source.schema.json",
+    "corpus": [
+      "../corpus/approval_automatic.json"
+    ],
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/approval_up_missing_target.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "target": {
+    "schema": "../schemas/approval-target.schema.json",
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "reverse": {
+    "argv": [
+      "node",
+      "../transforms/approval_down_from_memory.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "memory": {
+    "mode": "declared",
+    "schema": "../schemas/approval-memory.schema.json",
+    "forwardTargetPath": "/target",
+    "forwardMemoryPath": "/memory",
+    "reverseEnvelope": true,
+    "requireBinding": false
+  },
+  "context": {
+    "reverseIsolation": "fresh-process-clean-tempdir"
+  },
+  "search": {
+    "mode": "corpus",
+    "budget": 100,
+    "seed": 918273
+  },
+  "replay": {
+    "forward": 1,
+    "reverse": 1,
+    "equivalence": 1
+  }
+}

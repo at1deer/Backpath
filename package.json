@@ -1,7 +1,7 @@
 {
   "name": "backpath",
-  "version": "0.6.1",
-  "description": "Minimal Backpath CLI prototype",
+  "version": "0.8.1",
+  "description": "A CLI for finding replayable witnesses of transition loss across black-box transformations.",
   "private": true,
   "bin": {
     "backpath": "bin/backpath.js"
@@ -13,6 +13,8 @@
     "docs/",
     "examples/",
     "README.md",
+    "SECURITY.md",
+    "CHANGELOG.md",
     "BUILD_ORDER.md"
   ],
   "scripts": {

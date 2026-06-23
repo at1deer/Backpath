@@ -1,12 +1,51 @@
-# Backpath Documentation Pack
+# Backpath
 
-Backpath is a transition-loss instrument.
+Backpath finds what a transformation makes unrecoverable.
 
-It does not grade software, moralize migrations, or produce preservation scores. It produces concrete witnesses showing how a declared transformation excludes, merges, strands, drifts, diverges, or localizes states under explicit equivalence contracts.
+Backpath is a CLI for finding replayable witnesses of transition loss across black-box transformations. A user supplies JSON states, command-line transformations, validation/equivalence contracts, and a search budget. Backpath returns a concrete witness, a finite-domain proof, or an honest bounded non-finding.
 
-The first build should be a black-box command-line tool. A user supplies JSON states, command-line transformations, validation/equivalence contracts, and a search budget. Backpath returns a reproducible witness or an honest bounded non-finding.
+It does not grade software, moralize migrations, or produce preservation scores.
 
-## Implemented operations
+## Quickstart
+
+```bash
+npm install
+npm test
+node bin/backpath.js check examples/manifests/distinction-collision.approval.json
+node bin/backpath.js replay examples/witnesses/sample-distinction-collision.approval.json
+```
+
+## Compact Example
+
+A distinction collision is a case where two source-distinct states become equivalent after a transformation. In the approval example:
+
+```json
+{ "approval": "manual" }
+```
+
+and
+
+```json
+{ "approval": "automatic" }
+```
+
+both transform to:
+
+```json
+{ "approved": true }
+```
+
+Backpath reports this as:
+
+```json
+{
+  "operation": "distinction_collision",
+  "status": "witnessed",
+  "classification": "distinction_collision"
+}
+```
+
+## Implemented Operations
 
 | Manifest operation | Witness operation |
 | --- | --- |
@@ -16,52 +55,47 @@ The first build should be a black-box command-line tool. A user supplies JSON st
 | `compare-paths` | `path_divergence` |
 | `locate-loss` | `loss_localization` |
 
-## Limitations
-
-- Corpus mode only.
-- Exact and structural equivalence are implemented.
-- Local shrinking is implemented for `domain-exclusion`, `return-failure`, and `distinction-collision`.
-- No generation yet.
-- No canonical or predicate equivalence yet.
-- No retained memory support yet.
-- No sandbox security claim.
-- Loss localization currently supports linear distinction-collision localization only.
-
-## Current Prototype Features
+## Current Features
 
 - JSON manifests and JSON witnesses.
 - Ajv validation for manifests and declared source/target schemas.
 - `argv`-array command execution with command evidence and replay.
-- Corpus-mode checks for `domain-exclusion`, `distinction-collision`, `return-failure`, `compare-paths`, and `locate-loss`.
+- Corpus, exhaustive enumerator, generator, and corpus-mutation source search.
+- `proven_within_domain` only for completed finite exhaustive enumerator searches.
 - Exact and built-in structural equivalence contracts.
+- Declared retained-memory return checks with `memory.mode="declared"` and `reverseEnvelope=true`.
 - Local witness shrinking for `domain-exclusion`, `return-failure`, and `distinction-collision`.
 
-## Pack contents
+## Limitations
 
-- `schemas/backpath-manifest.v1.schema.json` — manifest contract for all core operations.
-- `schemas/backpath-witness.v1.schema.json` — machine-readable witness/report contract.
-- `schemas/backpath-replay.v1.schema.json` — reproducible replay bundle contract.
-- `docs/00_project_brief.md` — project boundary and invention claim.
-- `docs/01_core_model.md` — transition model, domains, equivalence, statuses.
-- `docs/02_operation_001_distinction_collision.md` — forward distinction loss.
-- `docs/03_operation_002_return_failure.md` — returnability failure taxonomy.
-- `docs/04_operation_003_domain_exclusion.md` — valid source states that cannot cross.
-- `docs/05_operation_004_path_divergence.md` — different routes, different terminal states.
-- `docs/06_operation_005_loss_localization.md` — locating the edge where loss first occurs.
-- `docs/07_manifest_reference.md` — manifest field guide.
-- `docs/08_witness_reference.md` — witness/report field guide.
-- `docs/09_cli_reference.md` — proposed CLI.
-- `docs/10_runner_protocol.md` — subprocess protocol and isolation rules.
-- `docs/11_acceptance_suite.md` — specimen corpus and expected findings.
-- `docs/12_mvp_roadmap.md` — build sequence and kill criteria.
-- `docs/13_codex_build_prompt.md` — implementation prompt for a coding agent.
-- `examples/` — starter manifests, toy transforms, corpus items, and sample witness.
+- Backpath executes arbitrary local commands declared by manifests.
+- Backpath is not a sandbox; use OS or container isolation for untrusted code.
+- Source search supports corpus, enumerator, generator, and corpus-mutation modes.
+- Exact and structural equivalence only.
+- No canonical or predicate equivalence yet.
+- No automatic JSON Schema generation yet.
+- No YAML manifests yet.
+- Path/loss shrinking is not implemented.
+- Retained-memory binding checks with `memory.requireBinding=true` are not implemented.
+- Retained memory is implemented for `return-failure` only.
+- `memory.reverseEnvelope=false` is not supported.
+- Loss localization currently supports linear distinction-collision localization only.
+
+## Pack Contents
+
+- `schemas/backpath-manifest.v1.schema.json` - manifest contract for all core operations.
+- `schemas/backpath-witness.v1.schema.json` - machine-readable witness/report contract.
+- `schemas/backpath-replay.v1.schema.json` - reproducible replay bundle contract.
+- `docs/` - model, operation, manifest, witness, runner, and roadmap notes.
+- `examples/` - starter manifests, toy transforms, generators, corpus items, and sample witnesses.
 
 ## Not Implemented Yet
 
-- Search generation and corpus mutation.
+- Automatic JSON Schema generation.
 - Canonicalizer commands and predicate equivalence.
-- Retained memory contracts.
+- Retained-memory binding checks.
+- Retained-memory reverse input without an envelope.
+- Retained memory for operations other than `return-failure`.
 - YAML manifests.
 - Dashboards, plugins, scoring, and sandbox security.
 - Return localization, path-divergence localization, and path/loss shrinking.

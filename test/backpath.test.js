@@ -14,6 +14,7 @@ const { jsonCostForPair, jsonCostForState } = require("../lib/shrinker");
 const repoRoot = path.resolve(__dirname, "..");
 const cli = path.join(repoRoot, "bin", "backpath.js");
 const witnessSchema = compileSchemaFile(path.join(repoRoot, "schemas", "backpath-witness.v1.schema.json"));
+const CLI_TEST_TIMEOUT_MS = 60000;
 
 test("validate accepts example manifests", () => {
   for (const manifest of [
@@ -31,7 +32,21 @@ test("validate accepts example manifests", () => {
     "examples/manifests/distinction-collision.tags-exact.json",
     "examples/manifests/distinction-collision.tags-structural-source.json",
     "examples/manifests/compare-paths.generated-at-exact.json",
-    "examples/manifests/compare-paths.generated-at-structural-target.json"
+    "examples/manifests/compare-paths.generated-at-structural-target.json",
+    "examples/manifests/return-failure.approval-declared-memory.json",
+    "examples/manifests/return-failure.approval-missing-memory.json",
+    "examples/manifests/return-failure.approval-missing-target.json",
+    "examples/manifests/return-failure.approval-invalid-memory.json",
+    "examples/manifests/return-failure.approval-insufficient-memory.json",
+    "examples/manifests/distinction-collision.approval-exhaustive-no-collision.json",
+    "examples/manifests/distinction-collision.approval-exhaustive-collision.json",
+    "examples/manifests/domain-exclusion.status-generate-rejected.json",
+    "examples/manifests/domain-exclusion.status-generate-no-witness.json",
+    "examples/manifests/domain-exclusion.status-generate-invalid-protocol.json",
+    "examples/manifests/domain-exclusion.status-generate-invalid-candidates.json",
+    "examples/manifests/domain-exclusion.noisy-status-mutation.json",
+    "examples/manifests/domain-exclusion.approval-mutation-no-witness.json",
+    "examples/manifests/return-failure.approval-declared-memory-generate.json"
   ]) {
     const result = runJson(["validate", manifest]);
     assert.equal(result.json.valid, true, manifest);
@@ -123,12 +138,101 @@ test("return_drift respects structural source equivalence", () => {
   assert.equal(witness.source.equivalence, "structural");
 });
 
-test("memory.mode declared validates but check rejects unsupported retained memory", () => {
+test("memory.mode declared prevents false return_drift", () => {
+  const witness = runJson(["check", "examples/manifests/return-failure.approval-declared-memory.json"]).json;
+
+  assert.equal(witness.operation, "return_failure");
+  assert.equal(witness.status, "not_found_within_budget");
+  assert.equal(witness.classification, "none");
+});
+
+test("declared memory missing path yields retained_memory_failure", () => {
+  const witness = runJson(["check", "examples/manifests/return-failure.approval-missing-memory.json"]).json;
+
+  assert.equal(witness.operation, "return_failure");
+  assert.equal(witness.status, "witnessed");
+  assert.equal(witness.classification, "retained_memory_failure");
+  assert.equal(diagnosticSubtype(witness), "missing_memory");
+  assert.equal(witness.target.value.approved, true);
+  assert.equal(witness.memory.declared, true);
+  assert.equal(witness.memory.found, false);
+  assert.equal(witness.forward.outputEnvelope, true);
+  assert.equal(witness.forward.targetPath, "/target");
+  assert.equal(witness.forward.memoryPath, "/memory");
+  assertWitnessSchema(witness);
+});
+
+test("declared memory missing target yields retained_memory_failure", () => {
+  const witness = runJson(["check", "examples/manifests/return-failure.approval-missing-target.json"]).json;
+
+  assert.equal(witness.operation, "return_failure");
+  assert.equal(witness.status, "witnessed");
+  assert.equal(witness.classification, "retained_memory_failure");
+  assert.equal(diagnosticSubtype(witness), "missing_target");
+  assert.equal(witness.target.found, false);
+  assert.equal(witness.target.targetPath, "/target");
+  assert.equal(witness.memory.declared, true);
+  assert.equal(witness.forward.outputEnvelope, true);
+  assert.equal(witness.forward.targetPath, "/target");
+  assert.equal(witness.forward.memoryPath, "/memory");
+  assertWitnessSchema(witness);
+  assertReplay(witness, "retained_memory_failure");
+});
+
+test("declared memory invalid schema yields retained_memory_failure", () => {
+  const witness = runJson(["check", "examples/manifests/return-failure.approval-invalid-memory.json"]).json;
+
+  assert.equal(witness.classification, "retained_memory_failure");
+  assert.equal(diagnosticSubtype(witness), "invalid_memory");
+  assert.equal(witness.memory.validation.valid, false);
+  assert.ok(witness.diagnostics[0].validation.errors.length > 0);
+  assertWitnessSchema(witness);
+});
+
+test("declared insufficient memory preserves precise return_drift classification", () => {
+  const witness = runJson(["check", "examples/manifests/return-failure.approval-insufficient-memory.json"]).json;
+
+  assert.equal(witness.classification, "return_drift");
+  assert.equal(diagnosticSubtype(witness), "insufficient_memory");
+  assert.deepEqual(witness.memory.value, { approvalMode: "unknown" });
+  assert.equal(witness.reverse.inputEnvelope, true);
+  assert.deepEqual(witness.source.returned, { approval: "manual" });
+  assertWitnessSchema(witness);
+});
+
+test("replay supports declared-memory return-failure witnesses", () => {
+  const witness = runJson(["check", "examples/manifests/return-failure.approval-insufficient-memory.json"]).json;
+
+  assertReplay(witness, "return_drift");
+});
+
+test("shrinking preserves declared-memory classifications", () => {
+  const fixture = createDeclaredMemoryShrinkFixture();
+  const original = readJsonAbsolute(path.join(fixture.dir, "source.json"));
+  const witness = runJson(["check", fixture.manifest]).json;
+
+  assert.equal(witness.classification, "retained_memory_failure");
+  assert.equal(diagnosticSubtype(witness), "missing_memory");
+  assert.equal(witness.minimality.kind, "local_fixed_point");
+  assert.ok(jsonCostForState(witness.source.value)[1] < jsonCostForState(original)[1]);
+  assert.deepEqual(witness.source.value, { approval: "automatic" });
+  assertWitnessSchema(witness);
+});
+
+test("memory.requireBinding true validates but check rejects unsupported binding checks", () => {
   const fixture = createFixture({
     operation: "return-failure",
     memory: {
-      mode: "declared"
+      mode: "declared",
+      schema: "memory.schema.json",
+      forwardTargetPath: "/target",
+      forwardMemoryPath: "/memory",
+      reverseEnvelope: true,
+      requireBinding: true
     }
+  });
+  writeJson(path.join(fixture.dir, "memory.schema.json"), {
+    type: "object"
   });
 
   const validation = runJson(["validate", fixture.manifest]);
@@ -136,7 +240,55 @@ test("memory.mode declared validates but check rejects unsupported retained memo
 
   const rejected = runJson(["check", fixture.manifest], { allowExit: 2 });
   assert.equal(rejected.json.valid, false);
-  assert.ok(rejected.json.errors.includes("v0.6 check does not yet support memory.mode='declared'"));
+  assert.ok(rejected.json.errors.includes("v0.7 check does not yet support memory.requireBinding=true"));
+});
+
+test("memory.reverseEnvelope false validates but check rejects unsupported reverse input mode", () => {
+  const fixture = createFixture({
+    operation: "return-failure",
+    memory: {
+      mode: "declared",
+      schema: "memory.schema.json",
+      forwardTargetPath: "/target",
+      forwardMemoryPath: "/memory",
+      reverseEnvelope: false,
+      requireBinding: false
+    }
+  });
+  writeJson(path.join(fixture.dir, "memory.schema.json"), {
+    type: "object"
+  });
+
+  const validation = runJson(["validate", fixture.manifest]);
+  assert.equal(validation.json.valid, true);
+
+  const rejected = runJson(["check", fixture.manifest], { allowExit: 2 });
+  assert.equal(rejected.json.valid, false);
+  assert.ok(rejected.json.errors.includes("v0.7 check supports declared memory only with memory.reverseEnvelope=true"));
+});
+
+test("declared memory outside return-failure validates but check rejects unsupported operation scope", () => {
+  const fixture = createFixture({
+    operation: "distinction-collision",
+    memory: {
+      mode: "declared",
+      schema: "memory.schema.json",
+      forwardTargetPath: "/target",
+      forwardMemoryPath: "/memory",
+      reverseEnvelope: true,
+      requireBinding: false
+    }
+  });
+  writeJson(path.join(fixture.dir, "memory.schema.json"), {
+    type: "object"
+  });
+
+  const validation = runJson(["validate", fixture.manifest]);
+  assert.equal(validation.json.valid, true);
+
+  const rejected = runJson(["check", fixture.manifest], { allowExit: 2 });
+  assert.equal(rejected.json.valid, false);
+  assert.ok(rejected.json.errors.includes("v0.7 check supports memory.mode='declared' only for return-failure"));
 });
 
 test("replay respects structural equivalence", () => {
@@ -149,17 +301,143 @@ test("replay respects structural equivalence", () => {
   assertReplay(witness, "distinction_collision");
 });
 
+test("exhaustive no-witness returns proven_within_domain", () => {
+  const witness = runJson(["check", "examples/manifests/distinction-collision.approval-exhaustive-no-collision.json"]).json;
+
+  assert.equal(witness.operation, "distinction_collision");
+  assert.equal(witness.status, "proven_within_domain");
+  assert.equal(witness.classification, "none");
+  assert.equal(witness.search.mode, "exhaustive");
+  assert.equal(witness.search.domainExhaustive, true);
+  assert.equal(witness.search.enumeratorExhausted, true);
+  assert.equal(witness.search.generated, false);
+  assert.equal(witness.search.candidateCount, 2);
+  assert.equal(witness.search.deduplicatedCandidateCount, 2);
+  assertWitnessSchema(witness);
+});
+
+test("exhaustive collision returns witnessed", () => {
+  const witness = runJson(["check", "examples/manifests/distinction-collision.approval-exhaustive-collision.json"]).json;
+
+  assert.equal(witness.status, "witnessed");
+  assert.equal(witness.classification, "distinction_collision");
+  assert.equal(witness.search.mode, "exhaustive");
+  assert.equal(witness.search.domainExhaustive, true);
+  assert.equal(witness.search.enumeratorExhausted, true);
+  assert.equal(witness.search.candidateCount, 3);
+  assertWitnessSchema(witness);
+});
+
+test("generate witness returns witnessed", () => {
+  const witness = runJson(["check", "examples/manifests/domain-exclusion.status-generate-rejected.json"]).json;
+
+  assert.equal(witness.status, "witnessed");
+  assert.equal(witness.classification, "source_rejected");
+  assert.equal(witness.search.mode, "generate");
+  assert.equal(witness.search.domainExhaustive, false);
+  assert.equal(witness.search.generatorExhausted, true);
+  assert.equal(witness.search.generated, true);
+  assert.equal(witness.search.candidateCount, 2);
+  assertWitnessSchema(witness);
+  assertReplay(witness, "source_rejected");
+});
+
+test("generate no-witness returns not_found_within_budget", () => {
+  const witness = runJson(["check", "examples/manifests/domain-exclusion.status-generate-no-witness.json"]).json;
+
+  assert.equal(witness.status, "not_found_within_budget");
+  assert.equal(witness.classification, "none");
+  assert.equal(witness.search.domainExhaustive, false);
+  assert.equal(witness.search.generatorExhausted, true);
+  assert.equal(witness.search.validCandidateCount, 3);
+  assertWitnessSchema(witness);
+});
+
+test("corpus-mutation witness returns witnessed", () => {
+  const witness = runJson(["check", "examples/manifests/domain-exclusion.noisy-status-mutation.json"]).json;
+
+  assert.equal(witness.status, "witnessed");
+  assert.equal(witness.classification, "source_rejected");
+  assert.equal(witness.search.mode, "corpus-mutation");
+  assert.equal(witness.search.domainExhaustive, false);
+  assert.equal(witness.search.corpusExhausted, true);
+  assert.deepEqual(witness.source.value, { status: "pending_review" });
+  assertWitnessSchema(witness);
+  assertReplay(witness, "source_rejected");
+});
+
+test("corpus-mutation no-witness returns not_found_within_budget", () => {
+  const witness = runJson(["check", "examples/manifests/domain-exclusion.approval-mutation-no-witness.json"]).json;
+
+  assert.equal(witness.status, "not_found_within_budget");
+  assert.equal(witness.classification, "none");
+  assert.equal(witness.search.mode, "corpus-mutation");
+  assert.equal(witness.search.domainExhaustive, false);
+  assert.equal(witness.search.corpusExhausted, true);
+  assertWitnessSchema(witness);
+});
+
+test("invalid generator protocol returns indeterminate", () => {
+  const witness = runJson(["check", "examples/manifests/domain-exclusion.status-generate-invalid-protocol.json"]).json;
+
+  assert.equal(witness.status, "indeterminate");
+  assert.equal(witness.classification, "none");
+  assert.equal(witness.diagnostics[0].classification, "generator_invalid_protocol");
+  assert.equal(witness.search.domainExhaustive, false);
+  assert.equal(witness.search.generatorExhausted, true);
+  assertWitnessSchema(witness);
+});
+
+test("invalid generated candidates are counted", () => {
+  const witness = runJson(["check", "examples/manifests/domain-exclusion.status-generate-invalid-candidates.json"]).json;
+
+  assert.equal(witness.status, "not_found_within_budget");
+  assert.equal(witness.classification, "none");
+  assert.equal(witness.search.invalidCandidateCount, 1);
+  assert.equal(witness.search.validCandidateCount, 1);
+  assert.equal(witness.diagnostics.some((diagnostic) => diagnostic.invalidCandidateCount === 1), true);
+  assertWitnessSchema(witness);
+});
+
+test("distinction-collision active search respects structural source equivalence", () => {
+  const fixture = createActiveStructuralCollisionFixture();
+  const witness = runJson(["check", fixture.manifest]).json;
+
+  assert.equal(witness.operation, "distinction_collision");
+  assert.equal(witness.status, "not_found_within_budget");
+  assert.equal(witness.classification, "none");
+  assert.equal(witness.source.equivalence, "structural");
+  assert.equal(witness.search.candidateCount, 2);
+  assert.equal(witness.search.deduplicatedCandidateCount, 1);
+  assert.equal(witness.search.domainExhaustive, false);
+  assertWitnessSchema(witness);
+});
+
+test("return-failure active search works with declared retained memory", () => {
+  const witness = runJson(["check", "examples/manifests/return-failure.approval-declared-memory-generate.json"]).json;
+
+  assert.equal(witness.operation, "return_failure");
+  assert.equal(witness.status, "not_found_within_budget");
+  assert.equal(witness.classification, "none");
+  assert.equal(witness.search.mode, "generate");
+  assert.equal(witness.search.domainExhaustive, false);
+  assert.equal(witness.search.generatorExhausted, true);
+  assertWitnessSchema(witness);
+});
+
 test("emitted witnesses validate against witness schema", () => {
   const witnesses = [
     runJson(["check", "examples/manifests/distinction-collision.approval.json"]).json,
     runJson(["check", "examples/manifests/return-failure.approval.json"]).json,
     runJson(["check", "examples/manifests/domain-exclusion.status.json"]).json,
     runJson(["check", "examples/manifests/compare-paths.role.json"]).json,
-    runJson(["check", "examples/manifests/locate-loss.account-type.json"]).json
+    runJson(["check", "examples/manifests/locate-loss.account-type.json"]).json,
+    runJson(["check", "examples/manifests/distinction-collision.approval-exhaustive-no-collision.json"]).json,
+    runJson(["check", "examples/manifests/domain-exclusion.status-generate-invalid-protocol.json"]).json
   ];
 
   assert.deepEqual(
-    witnesses.map((witness) => witness.classification),
+    witnesses.slice(0, 5).map((witness) => witness.classification),
     ["distinction_collision", "return_drift", "source_rejected", "path_divergence", "loss_localized"]
   );
   for (const witness of witnesses) {
@@ -644,6 +922,181 @@ function createStructuralReturnFixture({ sourceEquivalence }) {
   return { dir, manifest: manifestPath };
 }
 
+function createActiveStructuralCollisionFixture() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "backpath-active-structural-"));
+  writeJson(path.join(dir, "source.schema.json"), {
+    type: "object",
+    additionalProperties: false,
+    required: ["username"],
+    properties: {
+      username: { type: "string" }
+    }
+  });
+  writeJson(path.join(dir, "target.schema.json"), {
+    type: "object",
+    additionalProperties: false,
+    required: ["username"],
+    properties: {
+      username: { type: "string" }
+    }
+  });
+  fs.writeFileSync(
+    path.join(dir, "generator.js"),
+    [
+      "JSON.parse(require('node:fs').readFileSync(0, 'utf8'));",
+      "process.stdout.write(JSON.stringify([{ username: 'Aidan' }, { username: 'aidan' }]) + '\\n');"
+    ].join(" ")
+  );
+  fs.writeFileSync(
+    path.join(dir, "forward.js"),
+    [
+      "const input = JSON.parse(require('node:fs').readFileSync(0, 'utf8'));",
+      "process.stdout.write(JSON.stringify({ username: input.username.toLowerCase() }) + '\\n');"
+    ].join(" ")
+  );
+
+  const manifest = {
+    version: 1,
+    operation: "distinction-collision",
+    source: {
+      schema: "source.schema.json",
+      generator: {
+        argv: [process.execPath, "generator.js"],
+        timeoutMs: 2000
+      },
+      equivalence: {
+        mode: "structural",
+        normalizers: {
+          "/username": "lowercase"
+        }
+      }
+    },
+    forward: {
+      argv: [process.execPath, "forward.js"],
+      timeoutMs: 2000
+    },
+    target: {
+      schema: "target.schema.json",
+      equivalence: { mode: "exact" }
+    },
+    search: {
+      mode: "generate",
+      budget: 100,
+      seed: 918273
+    },
+    replay: {
+      forward: 1,
+      equivalence: 1
+    }
+  };
+
+  const manifestPath = path.join(dir, "manifest.json");
+  writeJson(manifestPath, manifest);
+  return { dir, manifest: manifestPath };
+}
+
+function createDeclaredMemoryShrinkFixture() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "backpath-memory-shrink-"));
+  writeJson(path.join(dir, "source.schema.json"), {
+    type: "object",
+    additionalProperties: false,
+    required: ["approval"],
+    properties: {
+      approval: { enum: ["manual", "automatic", "rejected"] },
+      note: { type: "string" },
+      metadata: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          unused: { type: "boolean" }
+        }
+      }
+    }
+  });
+  writeJson(path.join(dir, "target.schema.json"), {
+    type: "object",
+    additionalProperties: false,
+    required: ["approved"],
+    properties: {
+      approved: { type: "boolean" }
+    }
+  });
+  writeJson(path.join(dir, "memory.schema.json"), {
+    type: "object",
+    additionalProperties: false,
+    required: ["approvalMode"],
+    properties: {
+      approvalMode: { enum: ["manual", "automatic"] }
+    }
+  });
+  writeJson(path.join(dir, "source.json"), {
+    approval: "automatic",
+    note: "irrelevant",
+    metadata: {
+      unused: true
+    }
+  });
+  fs.writeFileSync(
+    path.join(dir, "forward.js"),
+    "process.stdout.write(JSON.stringify({ target: { approved: true } }) + '\\n');"
+  );
+  fs.writeFileSync(
+    path.join(dir, "reverse.js"),
+    "process.stdout.write(JSON.stringify({ approval: 'automatic' }) + '\\n');"
+  );
+
+  const manifest = {
+    version: 1,
+    operation: "return-failure",
+    source: {
+      schema: "source.schema.json",
+      corpus: ["source.json"],
+      equivalence: { mode: "exact" }
+    },
+    forward: {
+      argv: [process.execPath, "forward.js"],
+      timeoutMs: 2000
+    },
+    target: {
+      schema: "target.schema.json",
+      equivalence: { mode: "exact" }
+    },
+    reverse: {
+      argv: [process.execPath, "reverse.js"],
+      timeoutMs: 2000
+    },
+    memory: {
+      mode: "declared",
+      schema: "memory.schema.json",
+      forwardTargetPath: "/target",
+      forwardMemoryPath: "/memory",
+      reverseEnvelope: true,
+      requireBinding: false
+    },
+    context: {
+      reverseIsolation: "fresh-process-clean-tempdir"
+    },
+    search: {
+      mode: "corpus",
+      budget: 100
+    },
+    shrink: {
+      enabled: true,
+      budget: 1000,
+      preserveClassification: true
+    },
+    replay: {
+      forward: 1,
+      reverse: 1,
+      equivalence: 1
+    }
+  };
+
+  const manifestPath = path.join(dir, "manifest.json");
+  writeJson(manifestPath, manifest);
+  return { dir, manifest: manifestPath };
+}
+
 function createLocateLossFixture({ mode } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "backpath-locate-"));
   writeJson(path.join(dir, "input-witness.json"), {
@@ -856,9 +1309,13 @@ function runJson(args, options = {}) {
     cwd: repoRoot,
     encoding: "utf8",
     shell: false,
-    windowsHide: true
+    windowsHide: true,
+    timeout: CLI_TEST_TIMEOUT_MS
   });
   const allowed = options.allowExit === undefined ? 0 : options.allowExit;
+  assert.ifError(result.error && result.error.code === "ETIMEDOUT"
+    ? new Error(`CLI timed out after ${CLI_TEST_TIMEOUT_MS}ms: ${[cli, ...args].join(" ")}`)
+    : result.error);
   assert.equal(result.status, allowed, result.stderr || result.stdout);
   return {
     status: result.status,
@@ -872,6 +1329,10 @@ function writeJson(filePath, value) {
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(repoRoot, relativePath), "utf8"));
+}
+
+function readJsonAbsolute(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
 function assertWitnessSchema(witness) {
@@ -893,4 +1354,10 @@ function shrinkDiagnostic(witness) {
   const diagnostic = witness.diagnostics.find((item) => Object.prototype.hasOwnProperty.call(item, "shrinkAttempts"));
   assert.ok(diagnostic, "expected shrink diagnostic");
   return diagnostic;
+}
+
+function diagnosticSubtype(witness) {
+  const diagnostic = witness.diagnostics.find((item) => item.subtype);
+  assert.ok(diagnostic, "expected diagnostic subtype");
+  return diagnostic.subtype;
 }

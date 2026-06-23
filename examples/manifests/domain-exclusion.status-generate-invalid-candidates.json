@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "operation": "domain-exclusion",
+  "name": "Generated status includes invalid candidates",
+  "source": {
+    "schema": "../schemas/status-source.schema.json",
+    "generator": {
+      "argv": [
+        "node",
+        "../generators/generate_status_with_invalid.js"
+      ],
+      "timeoutMs": 2000
+    },
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/status_up_reject_pending.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "target": {
+    "schema": "../schemas/status-target.schema.json",
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "search": {
+    "mode": "generate",
+    "budget": 10000,
+    "seed": 918273
+  },
+  "replay": {
+    "forward": 1
+  }
+}
