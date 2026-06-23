@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "operation": "distinction_collision",
+  "status": "witnessed",
+  "classification": "distinction_collision",
+  "createdAt": "2026-06-20T00:00:00Z",
+  "contractDigest": "sha256:example",
+  "manifestDigest": "sha256:example",
+  "summary": "Two source-distinct approval modes become the same target boolean.",
+  "source": {
+    "equivalence": "exact",
+    "a": {
+      "approval": "manual"
+    },
+    "b": {
+      "approval": "automatic"
+    },
+    "differencePaths": [
+      "/approval"
+    ]
+  },
+  "target": {
+    "equivalence": "exact",
+    "a": {
+      "approved": true
+    },
+    "b": {
+      "approved": true
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/approval_up.js"
+    ],
+    "timeoutMs": 2000,
+    "cwd": ".",
+    "exitCode": 0,
+    "durationMs": 10,
+    "timeout": false,
+    "stage": "forward",
+    "environment": {
+      "mode": "inherit",
+      "declared": {}
+    }
+  },
+  "minimality": {
+    "kind": "local_fixed_point",
+    "cost": [
+      1,
+      4,
+      2,
+      52,
+      2
+    ],
+    "preservedClassification": true
+  },
+  "reproducibility": {
+    "stableForwardReplays": 3,
+    "stableEquivalenceReplays": 3,
+    "seed": 918273,
+    "witnessFile": "examples/witnesses/sample-distinction-collision.approval.json",
+    "replayCommand": "backpath replay examples/witnesses/sample-distinction-collision.approval.json"
+  },
+  "search": {
+    "mode": "corpus",
+    "evaluatedStates": 3,
+    "evaluatedPairs": 3,
+    "budget": 1000,
+    "corpusExhausted": false,
+    "domainExhaustive": false
+  },
+  "diagnostics": [],
+  "artifacts": {}
+}

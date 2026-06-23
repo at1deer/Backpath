@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Approval Target",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "approved"
+  ],
+  "properties": {
+    "approved": {
+      "type": "boolean"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Role Source",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "role"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "role": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

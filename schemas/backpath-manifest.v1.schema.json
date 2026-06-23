@@ -1,0 +1,535 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://modalpathethics.com/backpath/schemas/backpath-manifest.v1.schema.json",
+  "title": "Backpath Manifest v1",
+  "description": "Declarative manifest for Backpath transition-loss operations.",
+  "type": "object",
+  "required": [
+    "version",
+    "operation"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "operation": {
+      "type": "string",
+      "enum": [
+        "distinction-collision",
+        "return-failure",
+        "domain-exclusion",
+        "compare-paths",
+        "locate-loss"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/domainSpec"
+    },
+    "target": {
+      "$ref": "#/$defs/domainSpec"
+    },
+    "forward": {
+      "$ref": "#/$defs/transformSpec"
+    },
+    "reverse": {
+      "$ref": "#/$defs/transformSpec"
+    },
+    "memory": {
+      "$ref": "#/$defs/memorySpec"
+    },
+    "context": {
+      "$ref": "#/$defs/contextSpec"
+    },
+    "search": {
+      "$ref": "#/$defs/searchSpec"
+    },
+    "shrink": {
+      "$ref": "#/$defs/shrinkSpec"
+    },
+    "replay": {
+      "$ref": "#/$defs/replaySpec"
+    },
+    "paths": {
+      "type": "array",
+      "description": "Named alternate transformation paths for compare-paths.",
+      "items": {
+        "$ref": "#/$defs/namedPathSpec"
+      },
+      "minItems": 2
+    },
+    "pipeline": {
+      "type": "array",
+      "description": "Linear pipeline of transformation edges for loss localization.",
+      "items": {
+        "$ref": "#/$defs/pipelineEdgeSpec"
+      },
+      "minItems": 1
+    },
+    "inputWitness": {
+      "type": "string",
+      "description": "Path to a witness file used by locate-loss or replay-oriented operations."
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "operation"
+        ],
+        "properties": {
+          "operation": {
+            "enum": [
+              "distinction-collision",
+              "return-failure",
+              "domain-exclusion",
+              "compare-paths"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "source",
+          "forward",
+          "target",
+          "search"
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "operation"
+        ],
+        "properties": {
+          "operation": {
+            "const": "return-failure"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "reverse"
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "operation"
+        ],
+        "properties": {
+          "operation": {
+            "const": "compare-paths"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "paths"
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "operation"
+        ],
+        "properties": {
+          "operation": {
+            "const": "locate-loss"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "inputWitness",
+          "pipeline"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "domainSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "equivalence"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string",
+          "description": "Path to a JSON Schema file."
+        },
+        "validator": {
+          "$ref": "#/$defs/commandSpec"
+        },
+        "corpus": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Paths to JSON specimen files."
+        },
+        "enumerator": {
+          "$ref": "#/$defs/commandSpec"
+        },
+        "generator": {
+          "$ref": "#/$defs/commandSpec"
+        },
+        "equivalence": {
+          "$ref": "#/$defs/equivalenceSpec"
+        }
+      }
+    },
+    "commandSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "argv"
+      ],
+      "properties": {
+        "argv": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Executable and arguments. No shell interpolation is performed."
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 2000
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "stdin": {
+          "type": "string",
+          "enum": [
+            "json"
+          ],
+          "default": "json"
+        },
+        "stdout": {
+          "type": "string",
+          "enum": [
+            "json"
+          ],
+          "default": "json"
+        }
+      }
+    },
+    "transformSpec": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commandSpec"
+        }
+      ]
+    },
+    "equivalenceSpec": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "const": "exact"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "canonicalizer"
+          ],
+          "properties": {
+            "mode": {
+              "const": "canonical"
+            },
+            "canonicalizer": {
+              "$ref": "#/$defs/commandSpec"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "const": "structural"
+            },
+            "ignorePaths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "unorderedPaths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "normalizers": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "enum": [
+                  "lowercase",
+                  "uppercase",
+                  "trim",
+                  "sort-array"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "predicate"
+          ],
+          "properties": {
+            "mode": {
+              "const": "predicate"
+            },
+            "predicate": {
+              "$ref": "#/$defs/commandSpec"
+            },
+            "indexer": {
+              "$ref": "#/$defs/commandSpec"
+            },
+            "explainer": {
+              "$ref": "#/$defs/commandSpec"
+            }
+          }
+        }
+      ]
+    },
+    "memorySpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "none",
+            "declared"
+          ],
+          "default": "none"
+        },
+        "schema": {
+          "type": "string"
+        },
+        "forwardTargetPath": {
+          "type": "string"
+        },
+        "forwardMemoryPath": {
+          "type": "string"
+        },
+        "reverseEnvelope": {
+          "type": "boolean",
+          "default": true
+        },
+        "requireBinding": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "contextSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reverseIsolation": {
+          "type": "string",
+          "enum": [
+            "none",
+            "fresh-process",
+            "fresh-process-clean-tempdir"
+          ],
+          "default": "fresh-process-clean-tempdir"
+        },
+        "declaredFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "declaredEnv": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {}
+        }
+      }
+    },
+    "searchSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "exhaustive",
+            "generate",
+            "corpus",
+            "corpus-mutation"
+          ]
+        },
+        "budget": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 10000
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "maxPairs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "preferCorpusFirst": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "shrinkSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "budget": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 5000
+        },
+        "preserveClassification": {
+          "type": "boolean",
+          "default": true
+        },
+        "minimality": {
+          "type": "string",
+          "enum": [
+            "none",
+            "local-fixed-point",
+            "global-within-domain"
+          ],
+          "default": "local-fixed-point"
+        }
+      }
+    },
+    "replaySpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "forward": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 3
+        },
+        "reverse": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 3
+        },
+        "equivalence": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 3
+        }
+      }
+    },
+    "namedPathSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "edges"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pipelineEdgeSpec"
+          },
+          "minItems": 1
+        },
+        "target": {
+          "$ref": "#/$defs/domainSpec"
+        }
+      }
+    },
+    "pipelineEdgeSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "transform",
+        "target"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "transform": {
+          "$ref": "#/$defs/transformSpec"
+        },
+        "source": {
+          "$ref": "#/$defs/domainSpec"
+        },
+        "target": {
+          "$ref": "#/$defs/domainSpec"
+        }
+      }
+    }
+  }
+}

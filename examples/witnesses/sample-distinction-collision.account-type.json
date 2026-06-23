@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "operation": "distinction_collision",
+  "status": "witnessed",
+  "classification": "distinction_collision",
+  "createdAt": "2026-06-20T00:00:00Z",
+  "contractDigest": "sha256:example-account-type",
+  "manifestDigest": "sha256:example-account-type",
+  "summary": "Two account type states collapse to the same restricted target.",
+  "source": {
+    "equivalence": "exact",
+    "a": {
+      "accountType": "minor"
+    },
+    "b": {
+      "accountType": "dependent"
+    },
+    "differencePaths": [
+      "/accountType"
+    ]
+  },
+  "target": {
+    "equivalence": "exact",
+    "a": {
+      "restricted": true
+    },
+    "b": {
+      "restricted": true
+    }
+  },
+  "diagnostics": [],
+  "artifacts": {}
+}

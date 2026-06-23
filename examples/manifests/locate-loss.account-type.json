@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "operation": "locate-loss",
+  "name": "Account type loss localization",
+  "inputWitness": "../witnesses/sample-distinction-collision.account-type.json",
+  "pipeline": [
+    {
+      "name": "edge-1-preserve-account-type",
+      "transform": {
+        "argv": [
+          "node",
+          "../transforms/account_type_preserve.js"
+        ],
+        "timeoutMs": 2000
+      },
+      "target": {
+        "schema": "../schemas/account-type.schema.json",
+        "equivalence": {
+          "mode": "exact"
+        }
+      }
+    },
+    {
+      "name": "edge-2-restrict",
+      "transform": {
+        "argv": [
+          "node",
+          "../transforms/account_type_to_restricted.js"
+        ],
+        "timeoutMs": 2000
+      },
+      "target": {
+        "schema": "../schemas/restricted-target.schema.json",
+        "equivalence": {
+          "mode": "exact"
+        }
+      }
+    },
+    {
+      "name": "edge-3-preserve-restricted",
+      "transform": {
+        "argv": [
+          "node",
+          "../transforms/restricted_preserve.js"
+        ],
+        "timeoutMs": 2000
+      },
+      "target": {
+        "schema": "../schemas/restricted-target.schema.json",
+        "equivalence": {
+          "mode": "exact"
+        }
+      }
+    }
+  ],
+  "search": {
+    "mode": "corpus",
+    "budget": 100,
+    "seed": 918273
+  },
+  "replay": {
+    "forward": 1,
+    "equivalence": 1
+  }
+}

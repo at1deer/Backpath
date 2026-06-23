@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Noisy Approval Source",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "approval"
+  ],
+  "properties": {
+    "approval": {
+      "enum": [
+        "manual",
+        "automatic",
+        "rejected"
+      ]
+    },
+    "requestId": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "type": "string"
+        },
+        "reviewer": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "status": "pending_review",
+  "requestId": "STAT-4421",
+  "notes": "pending review is unsupported by the legacy forward transform",
+  "tags": [
+    "imported",
+    "needs-review",
+    "customer-visible"
+  ],
+  "payload": {
+    "region": "central",
+    "attempts": 4,
+    "flagged": true
+  }
+}

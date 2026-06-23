@@ -1,0 +1,15 @@
+{
+  "approval": "manual",
+  "requestId": "REQ-MANUAL-001",
+  "notes": "manual review selected after secondary queue",
+  "tags": [
+    "legacy",
+    "north",
+    "priority"
+  ],
+  "metadata": {
+    "channel": "email",
+    "reviewer": "avery",
+    "priority": 7
+  }
+}

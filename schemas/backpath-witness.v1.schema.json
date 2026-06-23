@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://modalpathethics.com/backpath/schemas/backpath-witness.v1.schema.json",
+  "title": "Backpath Witness v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "operation",
+    "status",
+    "classification",
+    "contractDigest",
+    "createdAt"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "operation": {
+      "type": "string",
+      "enum": [
+        "distinction_collision",
+        "return_failure",
+        "domain_exclusion",
+        "path_divergence",
+        "loss_localization"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "witnessed",
+        "proven_within_domain",
+        "not_found_within_budget",
+        "indeterminate"
+      ]
+    },
+    "classification": {
+      "type": "string",
+      "enum": [
+        "distinction_collision",
+        "return_drift",
+        "stranded_successor",
+        "invalid_return",
+        "return_ambiguity",
+        "context_dependent_return",
+        "retained_memory_failure",
+        "missing_memory",
+        "invalid_memory",
+        "mismatched_memory",
+        "insufficient_memory",
+        "forward_excluded",
+        "source_rejected",
+        "transform_crash",
+        "timeout",
+        "malformed_output",
+        "invalid_target",
+        "resource_exhausted",
+        "path_divergence",
+        "loss_localized",
+        "none"
+      ]
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "contractDigest": {
+      "type": "string"
+    },
+    "manifestDigest": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "forward": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "reverse": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "paths": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "pipeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "localization": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "minimality": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "reproducibility": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "search": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}

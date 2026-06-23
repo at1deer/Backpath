@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "operation": "distinction-collision",
+  "name": "Noisy approval enum collapse",
+  "source": {
+    "schema": "../schemas/noisy-approval-source.schema.json",
+    "corpus": [
+      "../corpus/approval_noisy_manual.json",
+      "../corpus/approval_noisy_automatic.json"
+    ],
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/approval_up.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "target": {
+    "schema": "../schemas/approval-target.schema.json",
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "search": {
+    "mode": "corpus",
+    "budget": 100,
+    "seed": 918273
+  },
+  "shrink": {
+    "enabled": true,
+    "budget": 200,
+    "preserveClassification": true
+  },
+  "replay": {
+    "forward": 1,
+    "equivalence": 1
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "approval": "automatic",
+  "requestId": "REQ-AUTO-999",
+  "notes": "automated policy accepted without a manual queue",
+  "tags": [
+    "new",
+    "south",
+    "bulk"
+  ],
+  "metadata": {
+    "channel": "api",
+    "reviewer": "system",
+    "priority": 3
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "operation": "distinction-collision",
+  "name": "Approval enum collapses to boolean",
+  "source": {
+    "schema": "../schemas/approval-source.schema.json",
+    "corpus": [
+      "../corpus/approval_manual.json",
+      "../corpus/approval_automatic.json",
+      "../corpus/approval_rejected.json"
+    ],
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/approval_up.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "target": {
+    "schema": "../schemas/approval-target.schema.json",
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "search": {
+    "mode": "corpus",
+    "budget": 1000,
+    "seed": 918273
+  },
+  "shrink": {
+    "enabled": true,
+    "budget": 5000,
+    "preserveClassification": true
+  },
+  "replay": {
+    "forward": 3,
+    "equivalence": 3
+  }
+}

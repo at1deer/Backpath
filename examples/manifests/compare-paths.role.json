@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "operation": "compare-paths",
+  "name": "Role null diverges across branch routes",
+  "source": {
+    "schema": "../schemas/role-source.schema.json",
+    "corpus": [
+      "../corpus/role_null.json"
+    ],
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "forward": {
+    "argv": [
+      "node",
+      "../transforms/role_v1_to_v2.js"
+    ],
+    "timeoutMs": 2000
+  },
+  "target": {
+    "schema": "../schemas/role-target.schema.json",
+    "equivalence": {
+      "mode": "exact"
+    }
+  },
+  "paths": [
+    {
+      "name": "v1-v2-v4",
+      "edges": [
+        {
+          "name": "v1-to-v2",
+          "transform": {
+            "argv": [
+              "node",
+              "../transforms/role_v1_to_v2.js"
+            ],
+            "timeoutMs": 2000
+          },
+          "target": {
+            "schema": "../schemas/role-target.schema.json",
+            "equivalence": {
+              "mode": "exact"
+            }
+          }
+        },
+        {
+          "name": "v2-to-v4",
+          "transform": {
+            "argv": [
+              "node",
+              "../transforms/role_v2_to_v4.js"
+            ],
+            "timeoutMs": 2000
+          },
+          "target": {
+            "schema": "../schemas/role-target.schema.json",
+            "equivalence": {
+              "mode": "exact"
+            }
+          }
+        }
+      ],
+      "target": {
+        "schema": "../schemas/role-target.schema.json",
+        "equivalence": {
+          "mode": "exact"
+        }
+      }
+    },
+    {
+      "name": "v1-v3-v4",
+      "edges": [
+        {
+          "name": "v1-to-v3",
+          "transform": {
+            "argv": [
+              "node",
+              "../transforms/role_v1_to_v3.js"
+            ],
+            "timeoutMs": 2000
+          },
+          "target": {
+            "schema": "../schemas/role-target.schema.json",
+            "equivalence": {
+              "mode": "exact"
+            }
+          }
+        },
+        {
+          "name": "v3-to-v4",
+          "transform": {
+            "argv": [
+              "node",
+              "../transforms/role_v3_to_v4.js"
+            ],
+            "timeoutMs": 2000
+          },
+          "target": {
+            "schema": "../schemas/role-target.schema.json",
+            "equivalence": {
+              "mode": "exact"
+            }
+          }
+        }
+      ],
+      "target": {
+        "schema": "../schemas/role-target.schema.json",
+        "equivalence": {
+          "mode": "exact"
+        }
+      }
+    }
+  ],
+  "search": {
+    "mode": "corpus",
+    "budget": 1000,
+    "seed": 918273
+  },
+  "shrink": {
+    "enabled": true,
+    "budget": 5000,
+    "preserveClassification": true
+  },
+  "replay": {
+    "forward": 3
+  }
+}
