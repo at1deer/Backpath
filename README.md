@@ -6,7 +6,7 @@ Backpath is currently a v0.9 public release candidate.
 
 Backpath is a CLI for finding replayable witnesses of transition loss across black-box transformations. A manifest declares source states, local commands, validation schemas, equivalence contracts, and a search budget. Backpath runs the declared checks and emits JSON evidence that can be replayed.
 
-Backpath reports witnesses, not scores.
+Backpath reports witnesses, not grades or scores.
 
 ## Quickstart
 
