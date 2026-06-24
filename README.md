@@ -4,7 +4,7 @@ Backpath finds what a transformation makes unrecoverable.
 
 Backpath is a CLI for finding replayable witnesses of transition loss across black-box transformations. A user supplies JSON states, command-line transformations, validation/equivalence contracts, and a search budget. Backpath returns a concrete witness, a finite-domain proof, or an honest bounded non-finding.
 
-It does not grade software, moralize migrations, or produce preservation scores.
+It does not grade software or produce preservation scores.
 
 ## Quickstart
 
