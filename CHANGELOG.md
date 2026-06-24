@@ -1,45 +1,42 @@
 # Changelog
 
-## v0.8.1
+## 0.9.1
 
-- Added release hygiene for active search, CI, public README updates, package metadata, and security documentation.
+Public release scrub, internal prompt artifact removal, and release metadata lock.
+Apache-2.0 license metadata and project notice.
 
-## v0.8
+## 0.9.0
 
-- Added active source search with corpus, finite exhaustive enumerator, bounded generator, and corpus-mutation modes.
-- Added epistemically honest search metadata and `proven_within_domain` only for completed finite exhaustive no-witness searches.
+Public release candidate documentation, CI, and packaging polish.
 
-## v0.7
+## 0.8.0
 
-- Added declared retained memory for `return-failure`.
-- Added reverse input envelopes for retained-memory reconstruction and explicit retained-memory failure diagnostics.
+Active search: corpus, exhaustive enumerator, generator, and corpus-mutation modes.
 
-## v0.6
+## 0.7.0
 
-- Added built-in structural equivalence with ignored paths, unordered arrays, and simple normalizers.
-- Kept exact equivalence as the default.
+Declared retained memory for return-failure.
 
-## v0.5
+## 0.6.0
 
-- Added local witness shrinking for `domain-exclusion`, `return-failure`, and `distinction-collision`.
-- Added minimality metadata for shrunk witnesses.
+Structural equivalence.
 
-## v0.4
+## 0.5.0
 
-- Added `locate-loss` as `loss_localization` for linear distinction-collision localization.
-- Added replay support for loss-localization witnesses.
+Local minimal witnesses for core operations.
 
-## v0.3
+## 0.4.0
 
-- Added `compare-paths` as `path_divergence`.
-- Added path evidence, terminal mismatch, route failure handling, and replay support.
+Loss localization.
 
-## v0.2
+## 0.3.0
 
-- Added contract fidelity with Ajv manifest/source/target validation.
-- Improved command evidence, return-failure boundaries, domain-exclusion classifications, and replay portability.
+Path divergence.
 
-## v0.1
+## 0.2.0
 
-- Added the core CLI prototype with `validate`, `check`, and `replay`.
-- Added corpus mode, exact equivalence, and core operations for domain exclusion, distinction collision, and return failure.
+Contract fidelity and schema validation.
+
+## 0.1.0
+
+Initial CLI prototype with corpus mode and exact equivalence.
