@@ -2,8 +2,6 @@
 
 Backpath finds what a transformation makes unrecoverable.
 
-<img width="3000" height="2000" alt="AdobeStock_434749359" src="https://github.com/user-attachments/assets/6d50088a-8d0f-4e0d-a082-01c1dcf36f8b" />
-
 Backpath is currently a v0.9 public release candidate.
 
 Backpath is a CLI for finding replayable witnesses of transition loss across black-box transformations. A manifest declares source states, local commands, validation schemas, equivalence contracts, and a search budget. Backpath runs the declared checks and emits JSON evidence that can be replayed.
